@@ -1,0 +1,232 @@
+GNSS Device Tracker System Architecture
+
+This document describes the architecture and functionality of the GNSS Device Tracker system, excluding the device code implementation.
+
+1. Backend Architecture
+---------------------
+
+The backend is built using Node.js with Express and provides a RESTful API interface. It uses MariaDB for data storage and includes MQTT support for real-time device communications.
+
+Key Components:
+
+a) Server (index.js):
+- Express server configuration
+- CORS support for frontend communication
+- API route mounting
+- Database and MQTT client initialization
+- Environment variable configuration
+
+b) Database (db.js):
+- MariaDB connection pool management
+- Connection retry mechanism
+- Error handling for various database connection scenarios
+- Connection pooling with a limit of 10 connections
+
+c) API Endpoints:
+
+Devices API (routes/devices.js):
+- GET /api/devices - List all devices
+- GET /api/devices/:id - Get specific device
+- POST /api/devices - Create new device
+- POST /api/devices/:id/location - Update device location
+- GET /api/devices/:id/history - Get device location history
+
+Geofences API (routes/geofences.js):
+- GET /api/geofences - List all geofences
+- GET /api/geofences/:id - Get specific geofence
+- POST /api/geofences - Create new geofence
+- PUT /api/geofences/:id - Update geofence
+- DELETE /api/geofences/:id - Delete geofence
+
+2. Frontend Architecture
+----------------------
+
+The frontend is built using React and provides a user interface for device tracking, geofencing, and alert management.
+
+Key Components:
+
+a) Main Application (App.js):
+- React Router setup for navigation
+- Sidebar navigation menu
+- Main content area
+- Responsive layout
+
+b) Pages:
+- DeviceList: Overview of all tracked devices
+- MapView: Real-time device location visualization
+- HistoricalView: Historical device movement data
+- Geofencing: Geofence management interface
+- AlertConfiguration: Alert setup and management
+
+3. Database Schema
+----------------
+
+The system uses MariaDB with the following main tables:
+
+a) devices:
+- id: Primary key
+- name: Device name
+- type: Device type
+- status: Current status
+- last_latitude: Last known latitude
+- last_longitude: Last known longitude
+- last_seen: Timestamp of last update
+
+b) device_history:
+- id: Primary key
+- device_id: Foreign key to devices
+- latitude: Position latitude
+- longitude: Position longitude
+- timestamp: Time of position record
+
+c) geofences:
+- id: Primary key
+- center_lat: Center latitude
+- center_lng: Center longitude
+- radius: Geofence radius
+- type: Geofence type (entry/exit)
+
+4. Key Features
+-------------
+
+a) Device Tracking:
+- Real-time device position updates
+- Historical position tracking
+- Device status monitoring
+- Support for multiple device types
+
+b) Geofencing:
+- Circular geofence creation
+- Geofence type specification (entry/exit)
+- Geofence management (create, update, delete)
+- Geofence visualization on map
+
+c) Alerting:
+- Geofence-based alerts
+- Device-specific alert configuration
+- Alert history tracking
+- Real-time alert notifications
+
+5. Integration Points
+-------------------
+
+a) Frontend-Backend Integration:
+- RESTful API calls for data operations
+- Real-time updates through MQTT
+- JSON data format for all communications
+
+b) Device-Backend Integration:
+- MQTT protocol for real-time device communications
+- Location update endpoints
+- Device registration system
+
+6. Security Considerations
+------------------------
+
+The system implements several security measures:
+
+a) Database:
+- Connection pooling to prevent resource exhaustion
+- Parameterized queries to prevent SQL injection
+- Configurable access credentials
+
+b) API:
+- CORS configuration for frontend access
+- Input validation on all endpoints
+- Error handling and sanitization
+
+7. Scalability Features
+---------------------
+
+The architecture supports scaling through:
+
+a) Backend:
+- Connection pooling for database operations
+- Stateless API design
+- Modular route handling
+
+b) Frontend:
+- Component-based architecture
+- Efficient state management
+- Lazy loading of views
+
+8. Monitoring and Maintenance
+---------------------------
+
+The system includes:
+- Database connection monitoring
+- Server startup diagnostics
+- MQTT connection status tracking
+- Error logging and handling
+
+This architecture provides a robust foundation for tracking GNSS-enabled devices, managing geofences, and handling alerts. The system is designed to be maintainable, scalable, and secure while providing real-time tracking capabilities and historical data analysis.
+
+9. Data Flow
+-----------
+
+Below is a flowchart showing the complete data path from device to frontend:
+
+[Device] (GNSS Data Collection)
+    |
+    | (UDP Message)
+    v
+[Node-RED Server]
+    | (1. Receives UDP message)
+    | (2. Processes data)
+    | (3. Publishes to MQTT topic)
+    v
+[MQTT Broker]
+    |
+    |-----> [Backend Server]
+    |         | (1. Subscribes to MQTT topics)
+    |         | (2. Processes incoming data)
+    |         | (3. Stores in MariaDB)
+    |         | (4. Updates connected clients)
+    |         v
+    |       [MariaDB Database]
+    |         | (Stores device data & history)
+    |         v
+    |-----> [Frontend Application]
+              | (1. Subscribes to MQTT updates)
+              | (2. Fetches historical data via REST API)
+              | (3. Updates UI in real-time)
+              v
+            [User Interface]
+              - Live map view
+              - Device list
+              - Historical data
+              - Geofence management
+              - Alert monitoring
+
+Data Flow Steps:
+
+1. Device Data Collection:
+   - Device collects GNSS position data
+   - Formats data as JSON
+   - Sends data via UDP to Node-RED server
+
+2. Node-RED Processing:
+   - Receives UDP messages on configured port
+   - Validates and processes incoming data
+   - Publishes processed data to MQTT topic
+
+3. MQTT Distribution:
+   - Broker receives published data
+   - Distributes to all subscribed clients
+   - Ensures real-time data delivery
+
+4. Backend Processing:
+   - Receives MQTT messages
+   - Updates database with new position data
+   - Maintains device history
+   - Checks geofence conditions
+   - Generates alerts if needed
+
+5. Frontend Updates:
+   - Receives real-time updates via MQTT
+   - Updates map markers
+   - Refreshes device status
+   - Shows alerts
+   - Updates historical views
+
+This flow ensures real-time tracking capabilities while maintaining a historical record of all device movements and states.

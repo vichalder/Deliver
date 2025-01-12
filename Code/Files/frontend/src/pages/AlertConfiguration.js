@@ -7,6 +7,7 @@ const AlertConfiguration = () => {
   const [selectedDevice, setSelectedDevice] = useState('');
   const [selectedGeofence, setSelectedGeofence] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
+  const [saveStatus, setSaveStatus] = useState('');
 
   useEffect(() => {
     fetchDevices();
@@ -15,7 +16,7 @@ const AlertConfiguration = () => {
 
   const fetchDevices = async () => {
     try {
-      const response = await axios.get('/api/devices');
+      const response = await axios.get('http://localhost:3000/api/devices');
       setDevices(response.data);
     } catch (error) {
       console.error('Error fetching devices:', error);
@@ -24,7 +25,7 @@ const AlertConfiguration = () => {
 
   const fetchGeofences = async () => {
     try {
-      const response = await axios.get('/api/geofences');
+      const response = await axios.get('http://localhost:3000/api/geofences');
       setGeofences(response.data);
     } catch (error) {
       console.error('Error fetching geofences:', error);
@@ -48,8 +49,8 @@ const AlertConfiguration = () => {
     }
 
     try {
-      const deviceResponse = await axios.get(`/api/devices/${deviceId}`);
-      const geofenceResponse = await axios.get(`/api/geofences/${geofenceId}`);
+      const deviceResponse = await axios.get(`http://localhost:3000/api/devices/${deviceId}`);
+      const geofenceResponse = await axios.get(`http://localhost:3000/api/geofences/${geofenceId}`);
       
       const device = deviceResponse.data;
       const geofence = geofenceResponse.data;
@@ -124,9 +125,40 @@ const AlertConfiguration = () => {
           ))}
         </select>
       </div>
+      <div>
+        <button 
+          onClick={async () => {
+            if (!selectedDevice || !selectedGeofence) {
+              setSaveStatus('Please select both a device and a geofence');
+              return;
+            }
+            try {
+              const response = await axios.post(
+                `http://localhost:3000/api/devices/${selectedDevice}/connect-geofence`,
+                { geofenceId: selectedGeofence }
+              );
+              setSaveStatus(`Connection saved successfully. Device status: ${response.data.status}`);
+              // Refresh devices list to show updated status
+              fetchDevices();
+            } catch (error) {
+              console.error('Error saving connection:', error);
+              setSaveStatus('Error saving connection. Please try again.');
+            }
+          }}
+          disabled={!selectedDevice || !selectedGeofence}
+          style={{ marginTop: '20px', padding: '10px 20px' }}
+        >
+          Save Connection
+        </button>
+      </div>
       {alertMessage && (
-        <div className="alert-message">
+        <div className="alert-message" style={{ marginTop: '20px' }}>
           {alertMessage}
+        </div>
+      )}
+      {saveStatus && (
+        <div className="save-status" style={{ marginTop: '20px', color: saveStatus.includes('Error') ? 'red' : 'green' }}>
+          {saveStatus}
         </div>
       )}
     </div>

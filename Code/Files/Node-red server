@@ -1,0 +1,209 @@
+[
+    {
+        "id": "0b69d86dbcf53692",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "5df7950552107a6f",
+        "type": "udp in",
+        "z": "0b69d86dbcf53692",
+        "name": "",
+        "iface": "",
+        "port": "51234",
+        "ipv": "udp4",
+        "multicast": "false",
+        "group": "",
+        "datatype": "utf8",
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "4d69e144611c6ca3",
+                "97f5ede390367b69"
+            ]
+        ]
+    },
+    {
+        "id": "b759b17a27ab7379",
+        "type": "debug",
+        "z": "0b69d86dbcf53692",
+        "name": "Actual",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 590,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "4d69e144611c6ca3",
+        "type": "function",
+        "z": "0b69d86dbcf53692",
+        "name": "function 7",
+        "func": "// Check if it's a hello message (checking if the string starts with \"Hello\")\nif (typeof msg.payload === 'string' && msg.payload.startsWith('Hello')) {\n    // Extract MAC address using regex\n    const macRegex = /([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})/;\n    const macMatch = msg.payload.match(macRegex);\n    \n    if (macMatch) {\n        const mac = macMatch[0];\n        // Extract text without MAC address\n        const textWithoutMac = msg.payload.replace(mac, '').trim();\n        \n        // Update msg object\n        msg.mac = mac;\n        msg.text = textWithoutMac;\n        msg.topic = `DTU/walter/newdevices/${mac}`;\n        \n        return msg;\n    }\n}\nelse {\n    const data = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;\n    // Extract the mac value\n    var mac = data.mac;\n    var latitude = data.latitude;\n    var longitude = data.longitude;\n    var confidence = data.confidence;\n    // Check if confidence is higher than 100\n    if (confidence > 100){\n        var fail = {\n            MAC_adr: mac,\n            Status: 'could not get a good fix'\n        } \n        msg.payload = fail;\n    } else {\n        var sendData = {\n            MAC_adr: mac,\n            Confidence: confidence,\n            Latitude: latitude,\n            Longitude: longitude,\n            };\n\n        // Assigning the extracted data to the message payload\n        msg.payload = sendData;\n    }\n    msg.topic = `DTU/walter/devices/${mac}`;\n    return msg;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 260,
+        "wires": [
+            [
+                "b759b17a27ab7379",
+                "698ad2a7884c44c0"
+            ]
+        ]
+    },
+    {
+        "id": "698ad2a7884c44c0",
+        "type": "mqtt out",
+        "z": "0b69d86dbcf53692",
+        "name": "",
+        "topic": "",
+        "qos": "1",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "dddaf3fd94b0aca5",
+        "x": 590,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "83adeec4aaee5295",
+        "type": "inject",
+        "z": "0b69d86dbcf53692",
+        "name": "Under 100",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"mac\":\"48:27:E2:8A:26:48\",\"satellites\":12,\"confidence\":50,\"latitude\":55.78208900,\"longitude\":12.51834500,\"cell_cc\":238,\"cell_nc\":20,\"cell_tac\":24042,\"cell_cid\":41980684,\"cell_rsrp\":-67.40}",
+        "payloadType": "str",
+        "x": 160,
+        "y": 260,
+        "wires": [
+            [
+                "4d69e144611c6ca3"
+            ]
+        ]
+    },
+    {
+        "id": "496c7b5986bc644b",
+        "type": "inject",
+        "z": "0b69d86dbcf53692",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "Hello, I am 48:27:E2:8A:26:48",
+        "payloadType": "str",
+        "x": 170,
+        "y": 440,
+        "wires": [
+            [
+                "4d69e144611c6ca3"
+            ]
+        ]
+    },
+    {
+        "id": "7f428a9c35958cb9",
+        "type": "inject",
+        "z": "0b69d86dbcf53692",
+        "name": "Over 100",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"mac\":\"48:27:E2:8A:26:48\",\"satellites\":12,\"confidence\":150,\"latitude\":19.962162,\"longitude\":-5.460283,\"cell_cc\":238,\"cell_nc\":20,\"cell_tac\":24042,\"cell_cid\":41980684,\"cell_rsrp\":-67.40}",
+        "payloadType": "str",
+        "x": 160,
+        "y": 300,
+        "wires": [
+            [
+                "4d69e144611c6ca3"
+            ]
+        ]
+    },
+    {
+        "id": "97f5ede390367b69",
+        "type": "debug",
+        "z": "0b69d86dbcf53692",
+        "name": "CHECK",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 360,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "dddaf3fd94b0aca5",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "test.mosquitto.org",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    }
+]
